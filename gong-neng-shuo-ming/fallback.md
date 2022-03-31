@@ -18,6 +18,7 @@ ControllerConfig:
   FallBackConfigs:  # Support multiple fallbacks
     -
       SNI: # TLS SNI(Server Name Indication), Empty for any
+      Alpn: # Alpn, Empty for any
       Path: # HTTP PATH, Empty for any
       Dest: 80 # Required, Destination of fallback, check https://xtls.github.io/config/fallback/ for details.
       ProxyProtocolVer: 0 # Send PROXY protocol version, 0 for dsable
@@ -30,6 +31,7 @@ XrayR遵循Xray设计思路，支持一个节点多个Fallback设置，因此`Fa
 ```yaml
 -
   SNI: # TLS SNI(Server Name Indication), Empty for any
+  Alpn: # Alpn, Empty for any
   Path: # HTTP PATH, Empty for any
   Dest: 80 # Required, Destination of fallback, check https://xtls.github.io/config/fallback/ for details.
   ProxyProtocolVer: 0 # Send PROXY protocol version, 0 for dsable
@@ -38,6 +40,17 @@ XrayR遵循Xray设计思路，支持一个节点多个Fallback设置，因此`Fa
 ### SNI: string
 
 尝试匹配 TLS SNI\(Server Name Indication\)，空为任意，默认为 ""
+
+### Alpn: string
+尝试匹配 TLS ALPN 协商结果，空为任意，默认为 ""
+
+有需要时，VLESS 才会尝试读取 TLS ALPN 协商结果，若成功，输出 info `realAlpn =` 到日志。
+用途：解决了 Nginx 的 h2c 服务不能同时兼容 http/1.1 的问题，Nginx 需要写两行 listen，分别用于 1.1 和 h2c。
+注意：fallbacks alpn 存在 `"h2"` 时，[Inbound TLS](../transport.md#tlsobject) 需设置 `"alpn":["h2","http/1.1"]`，以支持 h2 访问。
+
+{% hint style="info" %}
+Fallback 内设置的 `alpn` 是匹配实际协商出的 ALPN，而 Inbound TLS 设置的 `alpn` 是握手时可选的 ALPN 列表，两者含义不同。
+{% endhint %}
 
 ### Path: string
 
@@ -75,6 +88,7 @@ EnableFallback: true
 FallBackConfigs:  # Support multiple fallbacks
   -
     SNI:
+    Alpn:
     Path:
     Dest: 8080
     ProxyProtocolVer: 0
